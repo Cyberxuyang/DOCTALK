@@ -5,7 +5,8 @@ import { Button } from "./ui/button";
 import { useDropzone } from "react-dropzone";
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
-
+import React, { useContext } from "react";
+import { MyContext } from "@/app/MyContext";
 import {
   Dialog,
   DialogContent,
@@ -18,14 +19,14 @@ import {
 export default function FileUploader() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null); // 只存储一个文件
-  const [fileUrl, setFileUrl] = useState<string | null>(null); // 用来存储文件的 URL
-
+  // const [fileUrl, setFileUrl] = useState<string | null>(null); // 用来存储文件的 URL
+  const { setPdfUrl } = useContext(MyContext);
   // 当文件被上传（拖拽或点击选择）时调用
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0]; // 只处理第一个文件
     setFile(selectedFile); // 更新 file 变量
     const url = URL.createObjectURL(selectedFile); // 创建文件的 URL
-    setFileUrl(url); // 更新 fileUrl 变量
+    setPdfUrl(url); // 更新 fileUrl 变量
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
