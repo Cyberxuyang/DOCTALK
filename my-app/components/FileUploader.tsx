@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
+import { Button } from "./ui/button";
 
 export default function FileUploader() {
   const [files, setFiles] = React.useState<File[]>([]);
@@ -42,6 +43,7 @@ export default function FileUploader() {
         <div className="grid w-full max-w-sm items-center gap-1.5">
           {/* <Label htmlFor="picture">Picture</Label> */}
           <Input id="picture" type="file" />
+          <Button>Upload</Button>
         </div>
       </DialogContent>
     </Dialog>
