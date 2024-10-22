@@ -1,4 +1,4 @@
-function Hero() {
+function HeroSection() {
   return (
     <>
       <h1 className="text-5xl font-bold">DOCTALK</h1>
@@ -11,4 +11,4 @@ function Hero() {
   );
 }
 
-export default Hero;
+export default HeroSection;
