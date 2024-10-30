@@ -1,18 +1,45 @@
-import GithubButton from "./components/IndexPage/GithubButton";
-import HeroSection from "./components/IndexPage/HeroSection";
-import UploadButton from "./components/IndexPage/UploadButton";
-import "./index.css";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Home from "./components/Home";
+import ChatWithPaper from "./components/Chatwithpaper/ChatWithPaper";
+import AppLayout from "./components/AppLayout";
+import Error from "./components/Error";
+import { createContext, useState } from "react";
 
-export default function Home() {
+export const MyContext = createContext();
+
+const Provider = ({ children }) => {
+  const [file, setFile] = useState(null);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <HeroSection />
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <UploadButton />
-          <GithubButton />
-        </div>
-      </main>
-    </div>
+    <MyContext.Provider value={{ file, setFile }}>
+      {children}
+    </MyContext.Provider>
+  );
+};
+
+const router = createBrowserRouter([
+  {
+    element: <AppLayout />,
+    errorElement: <Error />,
+    children: [
+      {
+        path: "/",
+        element: <Home />,
+      },
+      {
+        path: "chatwithpaper",
+        element: <ChatWithPaper />,
+      },
+    ],
+  },
+]);
+
+function App() {
+  return (
+    <Provider>
+      <RouterProvider router={router} />
+    </Provider>
   );
 }
+
+export default App;
