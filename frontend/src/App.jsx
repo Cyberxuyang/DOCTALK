@@ -7,39 +7,31 @@ import { createContext, useState } from "react";
 
 export const MyContext = createContext();
 
-const Provider = ({ children }) => {
-  const [file, setFile] = useState(null);
-
-  return (
-    <MyContext.Provider value={{ file, setFile }}>
-      {children}
-    </MyContext.Provider>
-  );
-};
-
-const router = createBrowserRouter([
-  {
-    element: <AppLayout />,
-    errorElement: <Error />,
-    children: [
-      {
-        path: "/",
-        element: <Home />,
-      },
-      {
-        path: "chatwithpaper",
-        element: <ChatWithPaper />,
-      },
-    ],
-  },
-]);
-
 function App() {
-  return (
-    <Provider>
-      <RouterProvider router={router} />
-    </Provider>
-  );
+  const [file, setFile] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState("pdfUrl");
+
+  const router = createBrowserRouter([
+    {
+      element: (
+        <MyContext.Provider value={{ file, setFile, pdfUrl, setPdfUrl }}>
+          <AppLayout />
+        </MyContext.Provider>
+      ),
+      errorElement: <Error />,
+      children: [
+        {
+          path: "/",
+          element: <Home />,
+        },
+        {
+          path: "chatwithpaper",
+          element: <ChatWithPaper />,
+        },
+      ],
+    },
+  ]);
+  return <RouterProvider router={router} />;
 }
 
 export default App;

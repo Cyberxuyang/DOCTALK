@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 function UploadSection() {
   const navigate = useNavigate();
-  const { file, setFile } = useContext(MyContext);
+  const { file, setFile, pdfUrl, setPdfUrl } = useContext(MyContext);
   // 当 file 变化时，打印当前文件名，触发重新渲染
 
   useEffect(() => {
@@ -18,6 +18,9 @@ function UploadSection() {
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0]; // 只允许一个文件
     setFile(selectedFile);
+    const newPdfUrl = URL.createObjectURL(selectedFile);
+    setPdfUrl(newPdfUrl);
+    console.log("New PDF URL:", newPdfUrl, pdfUrl);
   };
 
   // 处理拖放文件
@@ -28,6 +31,8 @@ function UploadSection() {
     // 检查是否为 PDF
     if (droppedFile && droppedFile.type === "application/pdf") {
       setFile(droppedFile);
+      const newPdfUrl = URL.createObjectURL(droppedFile);
+      setPdfUrl(newPdfUrl);
     } else {
       alert("Please upload a PDF file.");
     }

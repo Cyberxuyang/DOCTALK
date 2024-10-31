@@ -1,14 +1,14 @@
-import ChatSection from "./ChatSection";
+import { ChatBox } from "./Chatbox";
 import Paper from "./Paper";
 
 function ChatWithPaper() {
   return (
-    <div className="flex">
-      <div className="w-2/3 m-5 bg-yellow-300 ">
+    <div className="flex h-[calc(100vh-32px)] pb-8">
+      <div className="w-2/3 m-5 overflow-hidden">
         <Paper />
       </div>
-      <div className="w-1/3 m-5 bg-red-400">
-        <ChatSection />
+      <div className="w-1/3 m-5 flex">
+        <ChatBox />
       </div>
     </div>
   );
