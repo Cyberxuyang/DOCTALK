@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
+import { chatService } from "@/services";
 
 export function ChatBox() {
   const [messages, setMessages] = useState([]);
@@ -11,12 +12,24 @@ export function ChatBox() {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    // 添加用户消息
     setMessages((prev) => [...prev, { role: "user", content: input }]);
 
-    // TODO: 这里添加调用 AI API 的逻辑
-    // const aiResponse = await callAIAPI(input)
-    // setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }])
+    try {
+      const response = await chatService.sendMessage(input);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: response },
+      ]);
+    } catch (error) {
+      console.error("Failed to get response:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please try again.",
+        },
+      ]);
+    }
 
     setInput("");
   };
