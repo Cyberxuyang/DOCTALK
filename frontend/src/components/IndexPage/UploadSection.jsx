@@ -2,6 +2,8 @@ import { useEffect, useContext } from "react";
 import { Button } from "../ui/button";
 import { MyContext } from "@/App";
 import { useNavigate } from "react-router-dom";
+import { uploadPdf } from "@/services/upload";
+// import chatService from "@/services/chat";
 
 function UploadSection() {
   const navigate = useNavigate();
@@ -44,8 +46,16 @@ function UploadSection() {
   };
 
   // 点击上传
-  const handleUpload = () => {
-    navigate("/chatwithpaper");
+  const handleUpload = async () => {
+    if (file) {
+      try {
+        await uploadPdf(file);
+        navigate("/chatwithpaper");
+      } catch (error) {
+        console.error("上传失败:", error);
+        // 可以添加错误提示
+      }
+    }
   };
 
   return (

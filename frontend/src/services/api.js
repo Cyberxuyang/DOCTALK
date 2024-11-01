@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const api = axios.create({
+const postApi = axios.create({
   baseURL: "http://localhost:8080",
   headers: {
     "Content-Type": "application/json",
@@ -10,4 +10,11 @@ const api = axios.create({
   maxBodyLength: Infinity,
 });
 
-export default api;
+const formdataApi = axios.create({
+  baseURL: "http://localhost:8080",
+
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
+});
+
+export { postApi, formdataApi };
