@@ -3,10 +3,11 @@ from llama_cpp import Llama
 from flask_cors import CORS
 from pdf_processor import extract_text_from_pdf
 from model_utils import ModelManager
-
+from pymilvus import MilvusClient
 app = Flask(__name__)
 CORS(app)
 
+client = MilvusClient("milvus_demo.db")
 llm_model = Llama(
     model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
     # n_ctx=256,          # 减小上下文长度，降低内存占用
@@ -114,6 +115,12 @@ def upload_file():
         # 获取文本的向量表示
         vector = sentence_model.encode(decoded_text)
         print(vector)
+        from pymilvus import MilvusClient
+
+        client = MilvusClient("milvus_demo.db")
+        client.insert(vector)
+        
+
         
         return jsonify({
             "text": "PDF uploaded successfully",  # 临时响应

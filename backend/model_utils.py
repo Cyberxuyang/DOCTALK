@@ -34,8 +34,3 @@ class ModelManager:
             except Exception as e:
                 logger.error(f"模型加载失败: {str(e)}")
                 raise
-
-# sentences = ["This is an example sentence", "Each sentence is converted"]
-#
-# embeddings = ModelManager.get_model().encode(sentences)
-# print(embeddings)
