@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
 from llama_cpp import Llama
 from flask_cors import CORS
+from pdf_processor import extract_text_from_pdf
+from model_utils import ModelManager
 
 app = Flask(__name__)
 CORS(app)
 
-model = Llama(
+llm_model = Llama(
     model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
     # n_ctx=256,          # 减小上下文长度，降低内存占用
     # n_threads=2,        # i5 通常有4个核心，设置为4比较合适
@@ -16,11 +18,14 @@ model = Llama(
     # verbose=False
 )
 
+# 句向量模型
+sentence_model = ModelManager.get_model()
+
 # chat_histories = {}
 
 @app.route('/')
 def hello_world():
-    response = model("say 200 words")
+    response = llm_model("say 200 words")
     return jsonify({"answer": response['choices'][0]['text']})
 
 
@@ -67,7 +72,7 @@ def ask_question():
 # )
 
  
-    response = model(question)
+    response = llm_model(question)
     assistant_message = response['choices'][0]['text']
     
 #     # 更新会话历史
@@ -85,13 +90,14 @@ def ask_question():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    print(request.files)
+    # print(request.files)
     if 'pdf' not in request.files:
         return jsonify({'error': '没有文件'}), 400
         
     file = request.files['pdf']
     print(file)
-    print(file.read())
+    # print(file.read())
+
     if file.filename == '':
         return jsonify({'error': '没有选择文件'}), 400
     
@@ -99,7 +105,15 @@ def upload_file():
         # 读取PDF文件内容
         text_content = file.read()
 
-        print(text_content)
+        # print(text_content)
+        decoded_text = extract_text_from_pdf(text_content)
+        # print(decoded_text)
+
+
+
+        # 获取文本的向量表示
+        vector = sentence_model.encode(decoded_text)
+        print(vector)
         
         return jsonify({
             "text": "PDF uploaded successfully",  # 临时响应
