@@ -20,4 +20,14 @@ export const chatService = {
       );
     }
   },
+  searchVectorDB: async (message) => {
+    try {
+      const response = await postApi.post("/vector-search", {
+        question: message,
+      });
+      return response.data.answer;
+    } catch (error) {
+      console.error("Error searching vector DB:", error);
+    }
+  },
 };

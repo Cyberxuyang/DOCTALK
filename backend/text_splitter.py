@@ -18,6 +18,10 @@ class TextSplitter:
             List[str]: 分割后的文本块列表
         """
         try:
+            # 如果文本不包含标点符号，直接返回原文本
+            if not any(p in text for p in '。！？.!?'):
+                return [text]
+            
             # 按标点符号分割句子（中英文标点）
             sentences = re.split(r'([。！？.!?])', text)
             
@@ -26,6 +30,10 @@ class TextSplitter:
             
             # 过滤空句子
             sentences = [s.strip() for s in sentences if s.strip()]
+            
+            # 如果分割后为空，返回原文本
+            if not sentences:
+                return [text]
             
             # 组合成块
             chunks = []
@@ -42,11 +50,12 @@ class TextSplitter:
                 chunks.append(''.join(current_chunk))
             
             logger.info(f"文本已分割成 {len(chunks)} 个片段")
-            return chunks
+            return chunks if chunks else [text]  # 如果chunks为空，返回原文本
             
         except Exception as e:
             logger.error(f"文本分割失败: {str(e)}")
-            raise
+            # 发生错误时返回原文本
+            return [text]
 
 # 测试代码
 if __name__ == "__main__":

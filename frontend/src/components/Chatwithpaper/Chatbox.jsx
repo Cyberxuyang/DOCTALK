@@ -34,6 +34,30 @@ export function ChatBox() {
     setInput("");
   };
 
+  const handleVectorSearch = async () => {
+    if (!input.trim()) return;
+    setMessages((prev) => [...prev, { role: "user", content: input }]);
+    try {
+      const response = await chatService.searchVectorDB(input);
+
+      // 收到响应后，更新消息列表，添加助手的回复
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: response },
+      ]);
+    } catch (error) {
+      console.error("Failed to get response:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please try again.",
+        },
+      ]);
+    }
+    setInput("");
+  };
+
   return (
     <Card className="w-full h-full flex flex-col">
       <ScrollArea className="flex-1 p-4">
@@ -65,7 +89,8 @@ export function ChatBox() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
-          <Button onClick={handleSend}>Send</Button>
+          <Button onClick={handleSend}>Ask AI</Button>
+          <Button onClick={handleVectorSearch}>From DB</Button>
         </div>
       </CardFooter>
     </Card>

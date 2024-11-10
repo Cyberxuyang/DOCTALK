@@ -4,25 +4,36 @@ from flask_cors import CORS
 from pdf_processor import extract_text_from_pdf
 from model_utils import ModelManager
 from pymilvus import MilvusClient
+from vectorDB import VectorDB
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Content-Length", "Accept", "X-Requested-With"],
+        "expose_headers": ["Content-Length"],
+        "supports_credentials": False,
+        "max_age": 3600
+    }
+})
 
-client = MilvusClient("milvus_demo.db")
-llm_model = Llama(
-    model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
-    # n_ctx=256,          # 减小上下文长度，降低内存占用
-    # n_threads=2,        # i5 通常有4个核心，设置为4比较合适
-    # n_gpu_layers=0,     # Intel 集成显卡不支持 GPU 加速，设为0
-    # n_batch=1,          # 降低批处理大小
-    # offload_kqv=False,  # 关闭 KQV 缓存以节省内存
-    # chat_format="chatml",
-    # verbose=False
-)
 
-# 句向量模型
-sentence_model = ModelManager.get_model()
+def init_resources():
+    global client, llm_model, sentence_model, vector_db
+    # 初始化Milvus客户端
+    client = MilvusClient("milvus_demo.db")
+    # 初始化LLM模型
+    llm_model = Llama(model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",)
+    # 句向量模型
+    sentence_model = ModelManager.get_model()
+    vector_db = VectorDB(client, sentence_model)
 
-# chat_histories = {}
 
 @app.route('/')
 def hello_world():
@@ -34,60 +45,43 @@ def hello_world():
 def ask_question():
     data = request.json
     question = data.get("question", "")
-    # session_id = data.get("session_id", "default")
-    
-#     # 如果是新会话，初始化历史记录
-#     if session_id not in chat_histories:
-#         chat_histories[session_id] = []
-    
-#     # 现在可以安全地检查历史记录长度
-#     if len(chat_histories[session_id]) > 6:
-#         chat_histories[session_id] = chat_histories[session_id][-6:]
-    
-#     # 构建完整的对话上下文
-#     messages = [
-#     {"role": "system", "content": """You are a professional paper analysis assistant with the following capabilities:
-#         1. Structure Analysis: Clearly explain different parts of papers (Abstract, Methods, Results, etc.)
-#         2. Technical Term Explanation: Explain complex academic concepts in simple terms
-#         3. Methodology Analysis: Provide detailed explanations of research methods' strengths and limitations
-#         4. Innovation Identification: Skilled at identifying paper's innovations and contributions
-#         5. Figure Interpretation: Able to explain paper's figures and data
-
-#         Response Format Requirements:
-#         - Use clear paragraph structure
-#         - Bold important concepts
-#         - Use bullet points when necessary
-#         - Provide explanations for technical terms
-#         - Highlight key findings
-#     """},
-#     *chat_histories[session_id],
-#     {"role": "user", "content": question}
-# ]
-    
-#     # 限制生成的token数量
-#     response = model.create_chat_completion(
-#     messages=messages,
-#     max_tokens=128,     # 减少生成长度
-#     temperature=0.3,
-#     repeat_penalty=1.1  # 添加重复惩罚
-# )
-
  
     response = llm_model(question)
     assistant_message = response['choices'][0]['text']
-    
-#     # 更新会话历史
-#     chat_histories[session_id].append({"role": "user", "content": question})
-#     chat_histories[session_id].append({"role": "assistant", "content": assistant_message})
-    
-#     # 可选：限制历史记录长度，防止消耗过多内存
-#     if len(chat_histories[session_id]) > 20:  # 保留最近的10轮对话
-#         chat_histories[session_id] = chat_histories[session_id][-20:]
     
     return jsonify({
         "answer": assistant_message,
         # "history": chat_histories[session_id]  # 可选：返回更新后的历史记录
     })
+
+
+@app.route('/vector-search', methods=['POST'])
+def query_VectorDB():
+    try:
+        data = request.json
+        question = data.get("question", "")
+        if not question:
+            return jsonify({'error': '问题不能为空'}), 400
+
+        logger.info(f"Received question: {question}")  # 添加日志
+        res = vector_db.query_data("demo_collection", question)
+        print(f"Query result: {res}")  # 添加日志
+        if not res:
+            llm_q = ""
+        else:
+
+            llm_q = res[0][0]["entity"]["text"]
+        # assistant_message = llm_q
+        response = llm_model(llm_q)
+        assistant_message = response['choices'][0]['text']
+
+        return jsonify({
+            # "answer": res,
+            "answer": assistant_message,
+        })
+    except Exception as e:
+        print(f"Error in vector search: {str(e)}")  # 添加错误日志
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -96,8 +90,6 @@ def upload_file():
         return jsonify({'error': '没有文件'}), 400
         
     file = request.files['pdf']
-    print(file)
-    # print(file.read())
 
     if file.filename == '':
         return jsonify({'error': '没有选择文件'}), 400
@@ -105,22 +97,9 @@ def upload_file():
     try:
         # 读取PDF文件内容
         text_content = file.read()
-
-        # print(text_content)
         decoded_text = extract_text_from_pdf(text_content)
-        # print(decoded_text)
-
-
-
-        # 获取文本的向量表示
-        vector = sentence_model.encode(decoded_text)
-        print(vector)
-        from pymilvus import MilvusClient
-
-        client = MilvusClient("milvus_demo.db")
-        client.insert(vector)
-        
-
+        logger.info(decoded_text)
+        vector_db.insert_data("demo_collection", decoded_text)
         
         return jsonify({
             "text": "PDF uploaded successfully",  # 临时响应
@@ -133,5 +112,6 @@ def upload_file():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    init_resources()
+    app.run(host='127.0.0.1', port=8080, debug=False)
     # app.run(host='0.0.0.0', port=8080)
