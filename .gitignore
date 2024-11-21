@@ -1,0 +1,8 @@
+.idea/
+/backend/mistral-7b-instruct-v0.2.Q2_K.gguf
+/backend/.venv
+/backend/local_models
+/backend/.locks
+/backend/__pycache__
+/backend/milvus_demo.db
+/backend/.milvus_demo.db.lock
