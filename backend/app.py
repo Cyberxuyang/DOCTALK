@@ -29,7 +29,17 @@ def init_resources():
     # 初始化Milvus客户端
     client = MilvusClient("milvus_demo.db")
     # 初始化LLM模型
-    llm_model = Llama(model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",)
+    llm_model = Llama(
+        # model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
+        model_path= "mistral-7b-instruct-v0.2.Q6_K.gguf",
+        n_ctx=32768,  # The max sequence length to use - note that longer sequence lengths require much more resources
+        n_threads=8,            # The number of CPU threads to use, tailor to your system and the resulting performance
+        n_gpu_layers=35,         # The number of layers to offload to GPU, if you have GPU acceleration available
+        temperature=0.3,  # 设置温度以控制输出的随机性
+        top_p=0.9,  # 设置top-p采样
+        frequency_penalty=0.0,  # 设置频率惩罚
+        presence_penalty=0.0  # 设置出现惩罚
+    )
     # 句向量模型
     sentence_model = ModelManager.get_model()
     vector_db = VectorDB(client, sentence_model)
@@ -46,9 +56,13 @@ def ask_question():
     data = request.json
     question = data.get("question", "")
  
-    response = llm_model(question)
+    response = llm_model(question,
+                         max_tokens=512,  # Generate up to 512 tokens
+                            # stop=["</s>"],   # Example stop token - not necessarily correct for this specific model! Please check before using.
+                            echo=True )       # Whether to echo the prompt)
+    print(response)
     assistant_message = response['choices'][0]['text']
-    
+    print(assistant_message)
     return jsonify({
         "answer": assistant_message,
         # "history": chat_histories[session_id]  # 可选：返回更新后的历史记录
@@ -69,10 +83,11 @@ def query_VectorDB():
         if not res:
             llm_q = ""
         else:
-
             llm_q = res[0][0]["entity"]["text"]
         # assistant_message = llm_q
-        response = llm_model(llm_q)
+        response = llm_model(llm_q,max_tokens=512,  # Generate up to 512 tokens
+                            # stop=["</s>"],   # Example stop token - not necessarily correct for this specific model! Please check before using.
+                            echo=True )
         assistant_message = response['choices'][0]['text']
 
         return jsonify({
