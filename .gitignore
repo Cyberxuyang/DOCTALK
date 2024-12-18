@@ -1,6 +1,5 @@
 .idea/
-/backend/mistral-7b-instruct-v0.2.Q2_K.gguf
-/backend/mistral-7b-instruct-v0.2.Q6_K.gguf
+/backend/mistral-7b-instruct-v0.2.Q8_0.gguf
 /backend/.venv
 /backend/local_models
 /backend/.locks

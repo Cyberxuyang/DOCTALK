@@ -31,12 +31,12 @@ def init_resources():
     # 初始化LLM模型
     llm_model = Llama(
         # model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
-        model_path= "mistral-7b-instruct-v0.2.Q6_K.gguf",
+        model_path= "mistral-7b-instruct-v0.2.Q8_0.gguf",
         n_ctx=32768,  # The max sequence length to use - note that longer sequence lengths require much more resources
         n_threads=8,            # The number of CPU threads to use, tailor to your system and the resulting performance
         n_gpu_layers=35,         # The number of layers to offload to GPU, if you have GPU acceleration available
-        temperature=0.3,  # 设置温度以控制输出的随机性
-        top_p=0.9,  # 设置top-p采样
+        temperature=0.1,  # 设置温度以控制输出的随机性
+        top_p=0.1,  # 设置top-p采样
         frequency_penalty=0.0,  # 设置频率惩罚
         presence_penalty=0.0  # 设置出现惩罚
     )
