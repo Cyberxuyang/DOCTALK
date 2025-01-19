@@ -14,6 +14,8 @@ nltk.data.path.insert(0, nltk_data_path)  # 确保优先从这里加载
 nltk.download('punkt', download_dir=nltk_data_path)
 nltk.download('punkt_tab')
 
+full_text = ""
+
 def extract_text_by_page(pdf_binary):
     """
     解析 PDF 二进制数据，按页提取文本，并按句子拆分，返回句子与所在页的映射
@@ -28,10 +30,10 @@ def extract_text_by_page(pdf_binary):
         for page_num, page in enumerate(pdf.pages, start=1):
             # 提取当前页的文本
             text = page.extract_text()
-
+            full_text = text
             # 如果无法提取文本，则跳过
             if not text:
-                print(f"⚠️ Page {page_num} has no extractable text.")  # 调试信息
+                print(f"Page {page_num} has no extractable text.")  # 调试信息
                 continue
             lines = text.split("\n")
             # 使用 NLTK 按句子分割

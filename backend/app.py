@@ -5,6 +5,7 @@ from model_utils import ModelManager
 from pymilvus import MilvusClient
 from vectorDB import VectorDB
 import logging
+from pdf_processor import full_text
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,17 +28,21 @@ def init_resources():
     global client, llm_model, sentence_model, vector_db
     # 初始化Milvus客户端
     client = MilvusClient("milvus_demo.db")
+
+
     # 初始化LLM模型
     llm_model = Llama(
         # model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
         model_path= "mistral-7b-instruct-v0.2.Q8_0.gguf",
-        n_ctx=32768,  # The max sequence length to use - note that longer sequence lengths require much more resources
-        n_threads=8,            # The number of CPU threads to use, tailor to your system and the resulting performance
-        n_gpu_layers=35,         # The number of layers to offload to GPU, if you have GPU acceleration available
-        temperature=0.1,  # 设置温度以控制输出的随机性
-        top_p=0.1,  # 设置top-p采样
-        frequency_penalty=0.0,  # 设置频率惩罚
-        presence_penalty=0.0  # 设置出现惩罚
+        n_ctx=4096,  # The max sequence length to use - note that longer sequence lengths require much more resources
+        n_threads=4,            # The number of CPU threads to use, tailor to your system and the resulting performance
+        n_gpu_layers=10,         # The number of layers to offload to GPU, if you have GPU acceleration available
+        temperature=0.3,  # 设置温度以控制输出的随机性
+        top_p=0.7,  # 设置top-p采样
+        repeat_penalty=1.2,
+        frequency_penalty=0.1,  # 设置频率惩罚
+        presence_penalty=0.1,  # 设置出现惩罚
+        stop = ["</s>"],  # 遇到 "</s>" 立即停止
     )
     # 句向量模型
     sentence_model = ModelManager.get_model()
@@ -54,11 +59,13 @@ def hello_world():
 def ask_question():
     data = request.json
     question = data.get("question", "")
- 
-    response = llm_model(question,
+    prompt = f"Based on the following article, answer the question:\n\n{full_text}\n\nQuestion: {question}\n\nYour answer should be clear, concise, and informative."
+    response = llm_model(
+                         prompt=prompt,
                          max_tokens=512,  # Generate up to 512 tokens
                             # stop=["</s>"],   # Example stop token - not necessarily correct for this specific model! Please check before using.
-                            echo=True )       # Whether to echo the prompt)
+                            # echo=True
+    )       # Whether to echo the prompt)
     assistant_message = response['choices'][0]['text']
     return jsonify({
         "answer": assistant_message,
@@ -75,6 +82,7 @@ def query_VectorDB():
             return jsonify({'error': '问题不能为空'}), 400
 
         logger.info(f"Received question: {question}")  # 添加日志
+
         res = vector_db.query_data("demo_collection", question)
         print(f"Query result: {res}")  # 添加日志
         if not res:
@@ -84,9 +92,10 @@ def query_VectorDB():
             llm_q = res[0][0]["entity"]["sentence"]
             page = res[0][0]["entity"]["page"]
         # assistant_message = llm_q
-        response = llm_model(llm_q,max_tokens=512,  # Generate up to 512 tokens
-                            # stop=["</s>"],   # Example stop token - not necessarily correct for this specific model! Please check before using.
-                            echo=True )
+        prompt = f"Based on the following article, answer the question:\n\n{res}\n\nQuestion: {llm_q}\n\nYour answer should be clear, concise, and informative."
+        response = llm_model(max_tokens=512,  # Generate up to 512 tokens
+                              # echo=True,
+                              prompt=prompt)
         assistant_message = response['choices'][0]['text']
 
         return jsonify({
