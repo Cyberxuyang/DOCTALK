@@ -7,16 +7,7 @@ logger = logging.getLogger(__name__)
 
 class TextSplitter:
     def split_text(self, text: str, chunk_size: int = 3) -> List[str]:
-        """
-        将长文本按句子分割，并组合成指定大小的块
-        
-        Args:
-            text: 输入的长文本
-            chunk_size: 每个块包含几个句子
-            
-        Returns:
-            List[str]: 分割后的文本块列表
-        """
+
         try:
             # 如果文本不包含标点符号，直接返回原文本
             if not any(p in text for p in '。！？.!?'):

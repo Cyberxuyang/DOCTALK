@@ -25,7 +25,7 @@ export const chatService = {
       const response = await postApi.post("/vector-search", {
         question: message,
       });
-      return response.data.answer;
+      return response.data;
     } catch (error) {
       console.error("Error searching vector DB:", error);
     }

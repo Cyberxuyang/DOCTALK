@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from llama_cpp import Llama
 from flask_cors import CORS
-from pdf_processor import extract_text_by_page
 from model_utils import ModelManager
 from pymilvus import MilvusClient
 from vectorDB import VectorDB
@@ -91,8 +90,8 @@ def query_VectorDB():
         assistant_message = response['choices'][0]['text']
 
         return jsonify({
-            # "answer": res,
             "answer": assistant_message,
+            "vectorDB_answer": llm_q,
             "page": page
         })
     except Exception as e:

@@ -39,12 +39,21 @@ export function ChatBox() {
     setMessages((prev) => [...prev, { role: "user", content: input }]);
     try {
       const response = await chatService.searchVectorDB(input);
+      console.log("response:::", response)
+
+      const formattedResponse = {
+        role: "assistant",
+        content: response.answer,  // ✅ 只显示回答
+        metadata: response.page ? { 
+          page: response.page, 
+          text: response.vectorDB_answer // ✅ PDF 里的相关文本
+        } : null,
+        isVectorResult: !!response.page,  // ✅ 标记这是向量搜索结果
+      };
 
       // 收到响应后，更新消息列表，添加助手的回复
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: response },
-      ]);
+      setMessages((prev) => [...prev, formattedResponse]);
+
     } catch (error) {
       console.error("Failed to get response:", error);
       setMessages((prev) => [
@@ -72,8 +81,18 @@ export function ChatBox() {
               className={`inline-block p-3 rounded-lg ${
                 message.role === "user"
                   ? "bg-primary text-primary-foreground"
+                  : message.isVectorResult
+                  ? "bg-blue-200 cursor-pointer hover:bg-blue-300"  // ✅ 让向量搜索结果变蓝色，并支持点击
                   : "bg-muted"
               }`}
+              onClick={() => {
+                if (message.isVectorResult && message.metadata?.page) {
+                  window.dispatchEvent(
+                    new CustomEvent("jumpToPage", { detail: { page: message.metadata.page, 
+                      text: message.metadata.text } })
+                  );  // ✅ 触发 PDF 跳转事件
+                }
+              }}
             >
               {message.content}
             </div>
