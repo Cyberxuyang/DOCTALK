@@ -10,7 +10,7 @@ import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 export default function PdfViewer() {
   const { pdfUrl } = useContext(MyContext);
   // const pdfUrl = "/ca4_5.pdf";
-  console.log("inpdfview"); 
+  console.log("in-pdfview"); 
   console.log(pdfUrl); 
   // const defaultLayoutPluginInstance = defaultLayoutPlugin();
 

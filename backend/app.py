@@ -60,9 +60,7 @@ def ask_question():
                          max_tokens=512,  # Generate up to 512 tokens
                             # stop=["</s>"],   # Example stop token - not necessarily correct for this specific model! Please check before using.
                             echo=True )       # Whether to echo the prompt)
-    print(response)
     assistant_message = response['choices'][0]['text']
-    print(assistant_message)
     return jsonify({
         "answer": assistant_message,
         # "history": chat_histories[session_id]  # 可选：返回更新后的历史记录
