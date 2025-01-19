@@ -6,3 +6,4 @@
 /backend/__pycache__
 /backend/milvus_demo.db
 /backend/.milvus_demo.db.lock
+/backend/backend/nltk_data

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from llama_cpp import Llama
 from flask_cors import CORS
-from pdf_processor import extract_text_from_pdf
+from pdf_processor import extract_text_by_page
 from model_utils import ModelManager
 from pymilvus import MilvusClient
 from vectorDB import VectorDB
@@ -80,8 +80,10 @@ def query_VectorDB():
         print(f"Query result: {res}")  # 添加日志
         if not res:
             llm_q = ""
+            page = ""
         else:
-            llm_q = res[0][0]["entity"]["text"]
+            llm_q = res[0][0]["entity"]["sentence"]
+            page = res[0][0]["entity"]["page"]
         # assistant_message = llm_q
         response = llm_model(llm_q,max_tokens=512,  # Generate up to 512 tokens
                             # stop=["</s>"],   # Example stop token - not necessarily correct for this specific model! Please check before using.
@@ -91,6 +93,7 @@ def query_VectorDB():
         return jsonify({
             # "answer": res,
             "answer": assistant_message,
+            "page": page
         })
     except Exception as e:
         print(f"Error in vector search: {str(e)}")  # 添加错误日志
@@ -110,9 +113,9 @@ def upload_file():
     try:
         # 读取PDF文件内容
         text_content = file.read()
-        decoded_text = extract_text_from_pdf(text_content)
-        logger.info(decoded_text)
-        vector_db.insert_data("demo_collection", decoded_text)
+        # decoded_text = extract_text_by_page(text_content)
+        # logger.info(decoded_text)
+        vector_db.insert_data("demo_collection", text_content)
         
         return jsonify({
             "text": "PDF uploaded successfully",  # 临时响应
