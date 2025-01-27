@@ -9,24 +9,24 @@ class TextSplitter:
     def split_text(self, text: str, chunk_size: int = 3) -> List[str]:
 
         try:
-            # 如果文本不包含标点符号，直接返回原文本
+            # If the text does not contain punctuation, return the original text
             if not any(p in text for p in '。！？.!?'):
                 return [text]
             
-            # 按标点符号分割句子（中英文标点）
+            # Split sentences by punctuation (Chinese and English punctuation)
             sentences = re.split(r'([。！？.!?])', text)
             
-            # 重新组合句子和标点
+            # Recombine sentences and punctuation
             sentences = [''.join(i) for i in zip(sentences[0::2], sentences[1::2])]
             
-            # 过滤空句子
+            # Filter out empty sentences
             sentences = [s.strip() for s in sentences if s.strip()]
             
-            # 如果分割后为空，返回原文本
+            # If the split results in an empty list, return the original text
             if not sentences:
                 return [text]
             
-            # 组合成块
+            # Combine into chunks
             chunks = []
             current_chunk = []
             
@@ -36,16 +36,16 @@ class TextSplitter:
                     chunks.append(''.join(current_chunk))
                     current_chunk = []
             
-            # 处理剩余的句子
+            # Handle remaining sentences
             if current_chunk:
                 chunks.append(''.join(current_chunk))
             
-            logger.info(f"文本已分割成 {len(chunks)} 个片段")
-            return chunks if chunks else [text]  # 如果chunks为空，返回原文本
+            logger.info(f"Text has been split into {len(chunks)} chunks")
+            return chunks if chunks else [text]  # If chunks is empty, return the original text
             
         except Exception as e:
-            logger.error(f"文本分割失败: {str(e)}")
-            # 发生错误时返回原文本
+            logger.error(f"Text splitting failed: {str(e)}")
+            # Return the original text in case of an error
             return [text]
 
 # 测试代码

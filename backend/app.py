@@ -5,7 +5,6 @@ from model_utils import ModelManager
 from pymilvus import MilvusClient
 from vectorDB import VectorDB
 import logging
-from pdf_processor import full_text
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,52 +25,51 @@ CORS(app, resources={
 
 def init_resources():
     global client, llm_model, sentence_model, vector_db
-    # 初始化Milvus客户端
+    # Initialize Milvus client
     client = MilvusClient("milvus_demo.db")
 
-
-    # 初始化LLM模型
+    # Initialize LLM model
     llm_model = Llama(
         # model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
         model_path= "mistral-7b-instruct-v0.2.Q8_0.gguf",
-        n_ctx=4096,  # The max sequence length to use - note that longer sequence lengths require much more resources
+        n_ctx=2048,  # The max sequence length to use - note that longer sequence lengths require much more resources
         n_threads=4,            # The number of CPU threads to use, tailor to your system and the resulting performance
-        n_gpu_layers=10,         # The number of layers to offload to GPU, if you have GPU acceleration available
-        temperature=0.3,  # 设置温度以控制输出的随机性
-        top_p=0.7,  # 设置top-p采样
-        repeat_penalty=1.2,
-        frequency_penalty=0.1,  # 设置频率惩罚
-        presence_penalty=0.1,  # 设置出现惩罚
-        stop = ["</s>"],  # 遇到 "</s>" 立即停止
+        n_gpu_layers=5,         # The number of layers to offload to GPU, if you have GPU acceleration available
+        temperature=0.3,  # Set temperature to control randomness of output
+        top_p=0.1,  # Set top-p sampling
+        # repeat_penalty=1.2,
+        frequency_penalty=0.0,  # Set frequency penalty
+        presence_penalty=0.0,  # Set presence penalty
+        # stop = ["</s>"],  # Stop immediately when "</s>" is encountered
+        max_tokens=256,  # Generate up to 256 tokens
     )
-    # 句向量模型
+    # Sentence vector model
     sentence_model = ModelManager.get_model()
     vector_db = VectorDB(client, sentence_model)
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def hello_world():
-    response = llm_model("say 200 words")
+    response = llm_model("say 2 words")
     return jsonify({"answer": response['choices'][0]['text']})
 
 
 @app.route('/chat', methods=['POST'])
 def ask_question():
-    data = request.json
-    question = data.get("question", "")
-    prompt = f"Based on the following article, answer the question:\n\n{full_text}\n\nQuestion: {question}\n\nYour answer should be clear, concise, and informative."
-    response = llm_model(
-                         prompt=prompt,
-                         max_tokens=512,  # Generate up to 512 tokens
-                            # stop=["</s>"],   # Example stop token - not necessarily correct for this specific model! Please check before using.
-                            # echo=True
-    )       # Whether to echo the prompt)
-    assistant_message = response['choices'][0]['text']
-    return jsonify({
-        "answer": assistant_message,
-        # "history": chat_histories[session_id]  # 可选：返回更新后的历史记录
-    })
-
+    try:
+        data = request.json
+        question = data.get("question", "")
+        prompt = f"Question: {question}\nYour answer should be clear, concise, and informative."
+        logger.info(f"start calling LLM")
+        response = llm_model(prompt=prompt)
+        assistant_message = response['choices'][0]['text']
+        return jsonify({
+            "answer": assistant_message,
+            # "history": chat_histories[session_id]  # 可选：返回更新后的历史记录
+        })
+    except Exception as e:
+        logger.error(f"Error in model inference: {e}")
+        return jsonify({'error': 'Model inference failed'}), 500
 
 @app.route('/vector-search', methods=['POST'])
 def query_VectorDB():
@@ -79,63 +77,63 @@ def query_VectorDB():
         data = request.json
         question = data.get("question", "")
         if not question:
-            return jsonify({'error': '问题不能为空'}), 400
+            return jsonify({'error': 'Question cannot be empty'}), 400
 
-        logger.info(f"Received question: {question}")  # 添加日志
+        logger.info(f"Received question: {question}")  # Add log
 
         res = vector_db.query_data("demo_collection", question)
-        print(f"Query result: {res}")  # 添加日志
+        logger.info(f"vector_db result: {res}")
         if not res:
-            llm_q = ""
+            vec_res = ""
             page = ""
         else:
-            llm_q = res[0][0]["entity"]["sentence"]
+            vec_res = res[0][0]["entity"]["sentence"]
             page = res[0][0]["entity"]["page"]
-        # assistant_message = llm_q
-        prompt = f"Based on the following article, answer the question:\n\n{res}\n\nQuestion: {llm_q}\n\nYour answer should be clear, concise, and informative."
-        response = llm_model(max_tokens=512,  # Generate up to 512 tokens
-                              # echo=True,
-                              prompt=prompt)
+
+        prompt = f"Text: {vec_res}\nQuestion: {question}\nAnswer (only the fact, no extra information):"
+
+        logger.info(prompt)
+
+        response = llm_model(prompt=prompt)
         assistant_message = response['choices'][0]['text']
 
         return jsonify({
             "answer": assistant_message,
-            "vectorDB_answer": llm_q,
+            "vectorDB_answer": vec_res,
             "page": page
         })
     except Exception as e:
-        print(f"Error in vector search: {str(e)}")  # 添加错误日志
         return jsonify({'error': str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    # print(request.files)
+
     if 'pdf' not in request.files:
-        return jsonify({'error': '没有文件'}), 400
+        return jsonify({'error': 'No file provided'}), 400
         
     file = request.files['pdf']
 
     if file.filename == '':
-        return jsonify({'error': '没有选择文件'}), 400
+        return jsonify({'error': 'No file selected'}), 400
     
     try:
-        # 读取PDF文件内容
+        # Read PDF file content
         text_content = file.read()
         # decoded_text = extract_text_by_page(text_content)
         # logger.info(decoded_text)
         vector_db.insert_data("demo_collection", text_content)
         
         return jsonify({
-            "text": "PDF uploaded successfully",  # 临时响应
+            "text": "PDF uploaded successfully",
             "status": "success"
         })
         
     except UnicodeDecodeError:
-        return jsonify({'error': '文件编码错误'}), 400
+        return jsonify({'error': 'File encoding error'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     init_resources()
     app.run(host='127.0.0.1', port=8080, debug=False)
-    # app.run(host='0.0.0.0', port=8080)
+

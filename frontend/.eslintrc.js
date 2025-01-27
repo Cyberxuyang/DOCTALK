@@ -14,6 +14,6 @@ module.exports = {
   },
   plugins: ["react"],
   rules: {
-    "react/prop-types": "off", // 关闭 PropTypes 校验
+    "react/prop-types": "off", // Disable PropTypes validation
   },
 };

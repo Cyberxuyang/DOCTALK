@@ -18,33 +18,22 @@ class VectorDB:
             self.client.drop_collection(collection_name=collection_name)
         self.client.create_collection(
             collection_name=collection_name,
-            dimension=384,  # The vectors we will use in this demo has 768 dimensions
+            dimension=384,  # The vectors we will use in this demo have 768 dimensions
         )
 
     def _process_text_to_vectors(self, text, forQuery: bool = False):
-        # logger.info(text)
-        # docs = self.text_splitter.split_text(text, chunk_size=1)
+
         if forQuery:
             return [self.sentence_model.encode(text).tolist()]
 
         sentence_page_mapping = extract_text_by_page(text)
-        # logger.info(sentence_page_mapping)
-        # return sentence_page_mappingd
+
         for i in range(len(sentence_page_mapping)):
             sentence_page_mapping[i]["id"] = i
             sentence_page_mapping[i]["vector"] = self.sentence_model.encode(sentence_page_mapping[i]["sentence"])
         #
         return sentence_page_mapping
-        # vectors = [self.sentence_model.encode(doc).tolist() for doc in docs]
-        # logger.info(docs)
-        # logger.info(vectors)
 
-        # data = [
-        #     {"id": i, "vector": vectors[i], "text": docs[i]}
-        #     for i in range(len(vectors))
-        # ]
-        # logger.info(data)
-        # return data
 
     def insert_data(self, collection_name: str, text: str ):
         logger.info(f"Inserting data into collection: {collection_name}")
@@ -57,21 +46,22 @@ class VectorDB:
     def query_data(self, collection_name, q):
         logger.info(f"[query_data]-q: {q}")
         query_vectors = self._process_text_to_vectors(q, forQuery=True)
-        print(type(query_vectors))  # 预期是 <class 'list'>
-        print(type(query_vectors[0]))  # 预期是 <class 'list'>
+        print(type(query_vectors))  # Expected to be <class 'list'>
+        print(type(query_vectors[0]))  # Expected to be <class 'list'>
         print(len(query_vectors[0]))
         # logger.info(f"[query_data]-query_vectors: {query_vectors}")
         logger.info(f"[query_data] Query Vector Shape: {len(query_vectors)}")
-        if not query_vectors:  # 检查向量是否为空
+        if not query_vectors:  # Check if vectors are empty
             return "No text to search"
             
-        if not self.client.has_collection(collection_name):  # 检查集合是否存在
+        if not self.client.has_collection(collection_name):  # Check if collection exists
             return "Collection does not exist"
         res = self.client.search(
             collection_name=collection_name,
             data=query_vectors,
             limit=2,
             output_fields=["sentence", "page"],
+            params={"metric_type": "COSINE"},
         )
         return res
 

@@ -1,4 +1,3 @@
-from PyPDF2 import PdfReader
 import io
 import pdfplumber
 import nltk
@@ -14,32 +13,31 @@ nltk.data.path.insert(0, nltk_data_path)  # 确保优先从这里加载
 nltk.download('punkt', download_dir=nltk_data_path)
 nltk.download('punkt_tab')
 
-full_text = ""
 
 def extract_text_by_page(pdf_binary):
     """
-    解析 PDF 二进制数据，按页提取文本，并按句子拆分，返回句子与所在页的映射
+    Parse PDF binary data, extract text by page, and split by sentence, returning a mapping of sentences to their pages.
     """
     result = []
 
-    # 读取 PDF 二进制数据
+    # Read PDF binary data
     pdf_stream = io.BytesIO(pdf_binary)
 
-    # 使用 pdfplumber 解析 PDF
+    # Use pdfplumber to parse PDF
     with pdfplumber.open(pdf_stream) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
-            # 提取当前页的文本
+            # Extract text from the current page
             text = page.extract_text()
             full_text = text
-            # 如果无法提取文本，则跳过
+            # Skip if no text can be extracted
             if not text:
-                print(f"Page {page_num} has no extractable text.")  # 调试信息
+                print(f"Page {page_num} has no extractable text.")  # Debug information
                 continue
             lines = text.split("\n")
-            # 使用 NLTK 按句子分割
+            # Use NLTK to split by sentence
             for line in lines:
-                clean_sentence = line.strip()  # 去除首尾空格
-                if clean_sentence:  # 避免添加空行
+                clean_sentence = line.strip()  # Remove leading and trailing spaces
+                if clean_sentence:  # Avoid adding empty lines
                     result.append({"page": page_num, "sentence": clean_sentence})
 
     return result
