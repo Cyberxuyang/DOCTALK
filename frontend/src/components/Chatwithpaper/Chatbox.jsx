@@ -74,16 +74,14 @@ export function ChatBox() {
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`mb-4 ${
-              message.role === "user" ? "text-right" : "text-left"
-            }`}
+            className="mb-4 text-left"
           >
             <div
               className={`inline-block p-3 rounded-lg ${
                 message.role === "user"
                   ? "bg-primary text-primary-foreground"
                   : message.isVectorResult
-                  ? "bg-blue-200 cursor-pointer hover:bg-blue-300"  // Make vector search results blue and clickable
+                  ? "bg-blue-200 cursor-pointer hover:bg-blue-300"
                   : "bg-muted"
               }`}
               onMouseEnter={() => setHoveredMessage(index)}
@@ -93,7 +91,7 @@ export function ChatBox() {
                   window.dispatchEvent(
                     new CustomEvent("jumpToPage", { detail: { page: message.metadata.page, 
                       text: message.metadata.text } })
-                  );  // Trigger PDF jump event
+                  );
                 }
               }}
             >
