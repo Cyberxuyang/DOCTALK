@@ -8,6 +8,7 @@ import { chatService } from "@/services";
 export function ChatBox() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [hoveredMessage, setHoveredMessage] = useState(null);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -43,15 +44,15 @@ export function ChatBox() {
 
       const formattedResponse = {
         role: "assistant",
-        content: response.answer,  // ✅ 只显示回答
+        content: response.answer,  // Display only the answer
         metadata: response.page ? { 
           page: response.page, 
-          text: response.vectorDB_answer // ✅ PDF 里的相关文本
+          text: response.vectorDB_answer // Relevant text from the PDF
         } : null,
-        isVectorResult: !!response.page,  // ✅ 标记这是向量搜索结果
+        isVectorResult: !!response.page,  // Mark this as a vector search result
       };
 
-      // 收到响应后，更新消息列表，添加助手的回复
+      // Update the message list with the assistant's reply after receiving the response
       setMessages((prev) => [...prev, formattedResponse]);
 
     } catch (error) {
@@ -82,19 +83,27 @@ export function ChatBox() {
                 message.role === "user"
                   ? "bg-primary text-primary-foreground"
                   : message.isVectorResult
-                  ? "bg-blue-200 cursor-pointer hover:bg-blue-300"  // ✅ 让向量搜索结果变蓝色，并支持点击
+                  ? "bg-blue-200 cursor-pointer hover:bg-blue-300"  // Make vector search results blue and clickable
                   : "bg-muted"
               }`}
+              onMouseEnter={() => setHoveredMessage(index)}
+              onMouseLeave={() => setHoveredMessage(null)}
               onClick={() => {
                 if (message.isVectorResult && message.metadata?.page) {
                   window.dispatchEvent(
                     new CustomEvent("jumpToPage", { detail: { page: message.metadata.page, 
                       text: message.metadata.text } })
-                  );  // ✅ 触发 PDF 跳转事件
+                  );  // Trigger PDF jump event
                 }
               }}
             >
               {message.content}
+              {hoveredMessage === index && message.metadata && (
+                <div className="absolute bg-white border p-2 mt-1 rounded shadow-lg">
+                  <p><strong>Page:</strong> {message.metadata.page}</p>
+                  <p><strong>Text:</strong> {message.metadata.text}</p>
+                </div>
+              )}
             </div>
           </div>
         ))}
