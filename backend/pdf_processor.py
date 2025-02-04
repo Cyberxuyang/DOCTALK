@@ -3,13 +3,13 @@ import pdfplumber
 import nltk
 import os
 
-# 指定 nltk_data 目录为项目内部的 backend/nltk_data
+# Specify the nltk_data directory within the project as backend/nltk_data
 nltk_data_path = os.path.join(os.getcwd(), "backend", "nltk_data")
 
-# 确保 nltk 在正确的目录加载数据
-nltk.data.path.insert(0, nltk_data_path)  # 确保优先从这里加载
+# Ensure nltk loads data from the correct directory
+nltk.data.path.insert(0, nltk_data_path)  # Ensure it loads from here first
 
-# 下载 punkt 到项目目录
+# Download punkt to the project directory
 nltk.download('punkt', download_dir=nltk_data_path)
 nltk.download('punkt_tab')
 
@@ -33,10 +33,10 @@ def extract_text_by_page(pdf_binary):
             if not text:
                 print(f"Page {page_num} has no extractable text.")  # Debug information
                 continue
-            lines = text.split("\n")
-            # Use NLTK to split by sentence
-            for line in lines:
-                clean_sentence = line.strip()  # Remove leading and trailing spaces
+            # Use NLTK to split text into sentences
+            sentences = nltk.tokenize.sent_tokenize(text)
+            for sentence in sentences:
+                clean_sentence = sentence.strip()  # Remove leading and trailing spaces
                 if clean_sentence:  # Avoid adding empty lines
                     result.append({"page": page_num, "sentence": clean_sentence})
 
@@ -64,20 +64,20 @@ def extract_full_text(pdf_binary):
 
 
 def simulate_frontend_upload(pdf_path):
-    """模拟前端上传 PDF 二进制数据"""
+    """Simulate frontend upload of PDF binary data"""
     with open(pdf_path, "rb") as f:
         return f.read()
 
 
 if __name__ == '__main__':
-    # 替换为你的 PDF 文件路径
+    # Replace with your PDF file path
     pdf_path = "example.pdf"
     pdf_binary = simulate_frontend_upload(pdf_path)
 
-    # 解析 PDF
+    # Parse PDF
     sentence_page_mapping = extract_text_by_page(pdf_binary)
 
-    # 打印结果
+    # Print results
     for mapping in sentence_page_mapping:
         print(f"Page {mapping['page']}: {mapping['sentence']}")
 
