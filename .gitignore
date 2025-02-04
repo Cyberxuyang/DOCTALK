@@ -1,5 +1,7 @@
 .idea/
 /backend/mistral-7b-instruct-v0.2.Q8_0.gguf
+/backend/DeepSeek-Coder-V2-Lite-Instruct-Q5_K_M.gguf
+/backend/DeepSeek-R1-Distill-Llama-8B-Q5_K_M.gguf
 /backend/.venv
 /backend/local_models
 /backend/.locks

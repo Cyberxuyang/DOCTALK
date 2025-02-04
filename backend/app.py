@@ -28,20 +28,37 @@ def init_resources():
     # Initialize Milvus client
     client = MilvusClient("milvus_demo.db")
 
-    # Initialize LLM model
+    # # Mistral-7b-instruct-v0.2.Q8_0.gguf
+    # llm_model = Llama(
+    #     model_path= "mistral-7b-instruct-v0.2.Q8_0.gguf",
+    #     n_ctx=2048,  # The max sequence length to use - note that longer sequence lengths require much more resources
+    #     n_threads=4,            # The number of CPU threads to use, tailor to your system and the resulting performance
+    #     n_gpu_layers=5,         # The number of layers to offload to GPU, if you have GPU acceleration available
+    #     temperature=0.3,  # Set temperature to control randomness of output
+    #     top_p=0.1,  # Set top-p sampling
+    #     # repeat_penalty=1.2,
+    #     frequency_penalty=0.0,  # Set frequency penalty
+    #     presence_penalty=0.0,  # Set presence penalty
+    #     # stop = ["</s>"],  # Stop immediately when "</s>" is encountered
+    #     max_tokens=256,  # Generate up to 256 tokens
+    # )
+
+
+    # DeepSeek-Coder-V2-Lite-Instruct-Q5_K_M.gguf
     llm_model = Llama(
-        # model_path="mistral-7b-instruct-v0.2.Q2_K.gguf",
-        model_path= "mistral-7b-instruct-v0.2.Q8_0.gguf",
-        n_ctx=2048,  # The max sequence length to use - note that longer sequence lengths require much more resources
-        n_threads=4,            # The number of CPU threads to use, tailor to your system and the resulting performance
-        n_gpu_layers=5,         # The number of layers to offload to GPU, if you have GPU acceleration available
-        temperature=0.3,  # Set temperature to control randomness of output
-        top_p=0.1,  # Set top-p sampling
-        # repeat_penalty=1.2,
-        frequency_penalty=0.0,  # Set frequency penalty
-        presence_penalty=0.0,  # Set presence penalty
-        # stop = ["</s>"],  # Stop immediately when "</s>" is encountered
-        max_tokens=256,  # Generate up to 256 tokens
+        # model_path="DeepSeek-Coder-V2-Lite-Instruct-Q5_K_M.gguf",
+        model_path="DeepSeek-R1-Distill-Llama-8B-Q5_K_M.gguf",
+        n_ctx=8192,
+        n_threads=8,
+        n_gpu_layers=10,
+        temperature=0.3,
+        top_p=0.9,
+        frequency_penalty=0.0,
+        presence_penalty=0.0,
+        repeat_penalty=1.2,
+        stop=["</s>"],
+        echo=False,  # Do not echo input
+        encoding="utf-8"  # Specify encoding explicitly
     )
     # Sentence vector model
     sentence_model = ModelManager.get_model()
@@ -59,9 +76,10 @@ def ask_question():
     try:
         data = request.json
         question = data.get("question", "")
-        prompt = f"Question: {question}\nYour answer should be clear, concise, and informative."
+        prompt = f"Answer concisely and directly, use one sentence. Question: {question}\n"
         logger.info(f"start calling LLM")
-        response = llm_model(prompt=prompt)
+        response = llm_model(prompt=prompt, max_tokens=256)
+        logger.info(f"LLM response: {response}")
         assistant_message = response['choices'][0]['text']
         return jsonify({
             "answer": assistant_message,
@@ -94,7 +112,7 @@ def query_VectorDB():
 
         logger.info(prompt)
 
-        response = llm_model(prompt=prompt)
+        response = llm_model(prompt=prompt, max_tokens=256)
         assistant_message = response['choices'][0]['text']
 
         return jsonify({

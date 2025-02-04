@@ -20,17 +20,17 @@ class ModelManager:
     def __init__(self):
         if ModelManager._model is None:
             try:
-                logger.info(f"正在加载模型 {self.MODEL_NAME}...")
+                logger.info(f"Loading model {self.MODEL_NAME}...")
                 if self.MODEL_PATH.exists():
-                    logger.info("从本地加载模型...")
+                    logger.info("Loading model from local storage...")
                     ModelManager._model = SentenceTransformer(str(self.MODEL_PATH))
                 else:
-                    logger.info("从网络下载模型...")
+                    logger.info("Downloading model from the internet...")
                     ModelManager._model = SentenceTransformer(self.MODEL_NAME)
-                    # 保存到本地
+                    # Save to local storage
                     self.MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
                     ModelManager._model.save(str(self.MODEL_PATH))
-                logger.info("模型加载完成！")
+                logger.info("Model loaded successfully!")
             except Exception as e:
-                logger.error(f"模型加载失败: {str(e)}")
+                logger.error(f"Failed to load model: {str(e)}")
                 raise

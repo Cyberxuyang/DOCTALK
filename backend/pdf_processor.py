@@ -43,6 +43,26 @@ def extract_text_by_page(pdf_binary):
     return result
 
 
+def extract_full_text(pdf_binary):
+    """
+    Parse PDF binary data and extract the full text.
+    """
+    full_text = []
+
+    # Read PDF binary data
+    pdf_stream = io.BytesIO(pdf_binary)
+
+    # Use pdfplumber to parse PDF
+    with pdfplumber.open(pdf_stream) as pdf:
+        for page in pdf.pages:
+            # Extract text from the current page
+            text = page.extract_text()
+            if text:
+                full_text.append(text)
+
+    return "\n".join(full_text)
+
+
 def simulate_frontend_upload(pdf_path):
     """模拟前端上传 PDF 二进制数据"""
     with open(pdf_path, "rb") as f:
