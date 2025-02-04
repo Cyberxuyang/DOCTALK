@@ -5,6 +5,7 @@ from model_utils import ModelManager
 from pymilvus import MilvusClient
 from vectorDB import VectorDB
 import logging
+from utils import clean_answer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -76,11 +77,22 @@ def ask_question():
     try:
         data = request.json
         question = data.get("question", "")
-        prompt = f"Answer concisely and directly, use one sentence. Question: {question}\n"
+
+        # 优化提示词
+        prompt = (
+            f"Please provide a **direct and factual answer** to the following question, **without any additional commentary or self-reflection**.\n"
+            f"Question: {question}\n"
+        )
+
         logger.info(f"start calling LLM")
-        response = llm_model(prompt=prompt, max_tokens=256)
+        response = llm_model(prompt=prompt, max_tokens=100)  # 限制生成的最大字数
         logger.info(f"LLM response: {response}")
-        assistant_message = response['choices'][0]['text']
+
+        # 提取生成的文本
+        assistant_message = response['choices'][0]['text'].strip()
+
+        assistant_message = clean_answer(assistant_message)
+
         return jsonify({
             "answer": assistant_message,
             # "history": chat_histories[session_id]  # 可选：返回更新后的历史记录
@@ -105,15 +117,21 @@ def query_VectorDB():
             vec_res = ""
             page = ""
         else:
-            vec_res = res[0][0]["entity"]["sentence"]
+            vec_res = res[0][0]["entity"]["sentence"].strip()
             page = res[0][0]["entity"]["page"]
 
-        prompt = f"Text: {vec_res}\nQuestion: {question}\nAnswer (only the fact, no extra information):"
+        # prompt = f"Text: '{vec_res}'\nQuestion: '{question}'\nAnswer (only the fact, no extra information)"
+        prompt = (
+            f"Based on '{vec_res}', Please provide a **direct and factual answer** to the following question, **without any additional commentary or self-reflection**.\n"
+            f"Question: {question}\n"
+        )
 
         logger.info(prompt)
 
         response = llm_model(prompt=prompt, max_tokens=256)
         assistant_message = response['choices'][0]['text']
+
+        assistant_message = clean_answer(assistant_message)
 
         return jsonify({
             "answer": assistant_message,
