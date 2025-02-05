@@ -8,29 +8,29 @@ import { uploadPdf } from "@/services/upload";
 function UploadSection() {
   const navigate = useNavigate();
   const { file, setFile, pdfUrl, setPdfUrl } = useContext(MyContext);
-  // 当 file 变化时，打印当前文件名，触发重新渲染
+  // Re-render when file changes and log the current filename
 
   useEffect(() => {
     if (file) {
       console.log("File has changed:", file.name);
     }
-  }, [file]); // 只有 file 变化时才会执行此 useEffect
+  }, [file]); // Only execute when file changes
 
-  // 处理文件上传
+  // Handle file upload
   const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0]; // 只允许一个文件
+    const selectedFile = event.target.files[0]; // Only allow one file
     setFile(selectedFile);
     const newPdfUrl = URL.createObjectURL(selectedFile);
     setPdfUrl(newPdfUrl);
     console.log("New PDF URL:", newPdfUrl, pdfUrl);
   };
 
-  // 处理拖放文件
+  // Handle file drop
   const handleDrop = (event) => {
     event.preventDefault();
-    const droppedFile = event.dataTransfer.files[0]; // 只允许一个文件
+    const droppedFile = event.dataTransfer.files[0]; // Only allow one file
 
-    // 检查是否为 PDF
+    // Check if file is PDF
     if (droppedFile && droppedFile.type === "application/pdf") {
       setFile(droppedFile);
       const newPdfUrl = URL.createObjectURL(droppedFile);
@@ -40,20 +40,20 @@ function UploadSection() {
     }
   };
 
-  // 阻止默认拖放行为
+  // Prevent default drag behavior
   const handleDragOver = (event) => {
     event.preventDefault();
   };
 
-  // 点击上传
+  // Handle upload button click
   const handleUpload = async () => {
     if (file) {
       try {
         await uploadPdf(file);
         navigate("/chatwithpaper");
       } catch (error) {
-        console.error("上传失败:", error);
-        // 可以添加错误提示
+        console.error("Upload failed:", error);
+        // Add error notification here if needed
       }
     }
   };
@@ -61,7 +61,7 @@ function UploadSection() {
   return (
     <>
       <div className="container mx-auto mt-5">
-        {/* upload section */}
+        {/* Upload section */}
         <div
           className="border-dashed border-2 border-gray-300 rounded-lg p-10 text-center hover:bg-gray-100 cursor-pointer "
           onDrop={handleDrop}
@@ -79,7 +79,7 @@ function UploadSection() {
           </label>
         </div>
 
-        {/* show uploaded file */}
+        {/* Display uploaded file */}
         {file && (
           <div className="mt-4">
             <h3 className="text-lg font-bold mb-2">Uploaded File:</h3>

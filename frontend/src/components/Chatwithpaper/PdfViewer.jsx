@@ -8,33 +8,33 @@ import '@react-pdf-viewer/highlight/lib/styles/index.css';
 
 export default function PdfViewer() {
   const { pdfUrl } = useContext(MyContext);
-  const highlightPluginInstance = highlightPlugin(); // 创建高亮插件实例
-  const [pluginMethods, setPluginMethods] = useState(null); // 存储插件方法
+  const highlightPluginInstance = highlightPlugin(); // Create highlight plugin instance
+  const [pluginMethods, setPluginMethods] = useState(null); // Store plugin methods
 
-  // 触发高亮
+  // Trigger highlight
   const highlightText = (text) => {
-    if (!text || !pluginMethods) return;  // 确保有插件方法
+    if (!text || !pluginMethods) return;  // Ensure plugin methods exist
     console.log(`🔍 Highlighting text: ${text}`);
 
     pluginMethods.highlight({
-      keyword: text, // 高亮文本
-      highlightColor: "rgba(255, 255, 0, 0.5)", // 黄色高亮
+      keyword: text, // Text to highlight
+      highlightColor: "rgba(255, 255, 0, 0.5)", // Yellow highlight
     });
   };
 
-  // 监听 jumpToPage 事件
+  // Listen for jumpToPage event
   useEffect(() => {
     const handleJumpToPage = (event) => {
       const { page, text } = event.detail;
       console.log(`📌 Jumping to page: ${page}, searching for text: ${text}`);
-      highlightText(text); // 高亮文本
+      highlightText(text); // Highlight the text
     };
 
     window.addEventListener("jumpToPage", handleJumpToPage);
     return () => {
       window.removeEventListener("jumpToPage", handleJumpToPage);
     };
-  }, [pluginMethods]); // 确保 pluginMethods 加载后再执行
+  }, [pluginMethods]); // Execute after pluginMethods is loaded
 
   return (
     <Worker workerUrl="/pdf.worker.min.js">
@@ -45,8 +45,8 @@ export default function PdfViewer() {
           console.log("✅ PDF loaded successfully!");
         }}
         onLoad={(methods) => {
-          console.log("📚 Plugin methods loaded:", methods); // 确保方法正常加载
-          setPluginMethods(methods); // 设置插件方法
+          console.log("📚 Plugin methods loaded:", methods); // Ensure methods are loaded correctly
+          setPluginMethods(methods); // Set plugin methods
         }}
       />
     </Worker>

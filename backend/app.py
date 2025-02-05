@@ -78,24 +78,22 @@ def ask_question():
         data = request.json
         question = data.get("question", "")
 
-        # 优化提示词
+        # Optimize prompt
         prompt = (
-            f"Please provide a **direct and factual answer** to the following question, **without any additional commentary or self-reflection**.\n"
+            f"Please provide a direct and factual answer to the following question.\n"
             f"Question: {question}\n"
         )
 
-        logger.info(f"start calling LLM")
-        response = llm_model(prompt=prompt, max_tokens=100)  # 限制生成的最大字数
+        logger.info("Starting LLM inference")
+        response = llm_model(prompt=prompt, max_tokens=100)  # Limit token generation
         logger.info(f"LLM response: {response}")
 
-        # 提取生成的文本
+        # Extract generated text
         assistant_message = response['choices'][0]['text'].strip()
-
         assistant_message = clean_answer(assistant_message)
 
         return jsonify({
             "answer": assistant_message,
-            # "history": chat_histories[session_id]  # 可选：返回更新后的历史记录
         })
     except Exception as e:
         logger.error(f"Error in model inference: {e}")
@@ -109,10 +107,10 @@ def query_VectorDB():
         if not question:
             return jsonify({'error': 'Question cannot be empty'}), 400
 
-        logger.info(f"Received question: {question}")  # Add log
-
+        logger.info(f"Received question: {question}")
         res = vector_db.query_data("demo_collection", question)
-        logger.info(f"vector_db result: {res}")
+        logger.info(f"Vector DB result: {res}")
+
         if not res:
             vec_res = ""
             page = ""
@@ -120,17 +118,15 @@ def query_VectorDB():
             vec_res = res[0][0]["entity"]["sentence"].strip()
             page = res[0][0]["entity"]["page"]
 
-        # prompt = f"Text: '{vec_res}'\nQuestion: '{question}'\nAnswer (only the fact, no extra information)"
         prompt = (
-            f"Based on '{vec_res}', Please provide a **direct and factual answer** to the following question, **without any additional commentary or self-reflection**.\n"
+            f"Based on this text: '{vec_res}', please provide a direct and factual answer "
+            f"to the following question, without any additional commentary or self-reflection.\n"
             f"Question: {question}\n"
         )
 
-        logger.info(prompt)
-
+        logger.info(f"Generated prompt: {prompt}")
         response = llm_model(prompt=prompt, max_tokens=256)
         assistant_message = response['choices'][0]['text']
-
         assistant_message = clean_answer(assistant_message)
 
         return jsonify({
@@ -139,24 +135,21 @@ def query_VectorDB():
             "page": page
         })
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Vector search failed: {e}")
+        return jsonify({'error': 'Search failed'}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-
     if 'pdf' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
         
     file = request.files['pdf']
-
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
     
     try:
         # Read PDF file content
         text_content = file.read()
-        # decoded_text = extract_text_by_page(text_content)
-        # logger.info(decoded_text)
         vector_db.insert_data("demo_collection", text_content)
         
         return jsonify({

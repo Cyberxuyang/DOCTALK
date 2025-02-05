@@ -18,7 +18,7 @@ class VectorDB:
             self.client.drop_collection(collection_name=collection_name)
         self.client.create_collection(
             collection_name=collection_name,
-            dimension=384,  # The vectors we will use in this demo have 768 dimensions
+            dimension=384,  # The vectors we will use have 384 dimensions
         )
 
     def _process_text_to_vectors(self, text, forQuery: bool = False):
@@ -35,27 +35,25 @@ class VectorDB:
         return sentence_page_mapping
 
 
-    def insert_data(self, collection_name: str, text: str ):
+    def insert_data(self, collection_name: str, text: str):
         logger.info(f"Inserting data into collection: {collection_name}")
-        logger.info("[insert_data]: text:", text)
+        logger.info("Processing text for insertion")
         self._create_collection(collection_name=collection_name, dimension=384)
         data = self._process_text_to_vectors(text)
         res = self.client.insert(collection_name=collection_name, data=data)
-        logger.info(res)
+        logger.info(f"Insertion result: {res}")
 
     def query_data(self, collection_name, q):
-        logger.info(f"[query_data]-q: {q}")
+        logger.info(f"Processing query: {q}")
         query_vectors = self._process_text_to_vectors(q, forQuery=True)
-        print(type(query_vectors))  # Expected to be <class 'list'>
-        print(type(query_vectors[0]))  # Expected to be <class 'list'>
-        print(len(query_vectors[0]))
-        # logger.info(f"[query_data]-query_vectors: {query_vectors}")
-        logger.info(f"[query_data] Query Vector Shape: {len(query_vectors)}")
-        if not query_vectors:  # Check if vectors are empty
+        logger.info(f"Query vector shape: {len(query_vectors)}")
+        
+        if not query_vectors:
             return "No text to search"
             
-        if not self.client.has_collection(collection_name):  # Check if collection exists
+        if not self.client.has_collection(collection_name):
             return "Collection does not exist"
+            
         res = self.client.search(
             collection_name=collection_name,
             data=query_vectors,
@@ -64,6 +62,67 @@ class VectorDB:
             params={"metric_type": "COSINE"},
         )
         return res
+
+    def query_data_with_context(self, collection_name, q, context_size=2):
+        """
+        Query text and return context
+        context_size: window size for context (per side), total window is 2*context_size + 1
+        """
+        try:
+            logger.info(f"Processing context query: {q}")
+            
+            # First find the most relevant sentence
+            query_vectors = self._process_text_to_vectors(q, forQuery=True)
+            if not query_vectors:
+                return "No text to search"
+            
+            if not self.client.has_collection(collection_name):
+                return "Collection does not exist"
+            
+            # Get the most relevant sentence
+            initial_res = self.client.search(
+                collection_name=collection_name,
+                data=query_vectors,
+                limit=1,
+                output_fields=["sentence", "page", "id"],
+                params={"metric_type": "COSINE"},
+            )
+            
+            if not initial_res or not initial_res[0]:
+                return []
+            
+            # Get center sentence ID
+            center_id = initial_res[0][0]["entity"]["id"]
+            
+            # Build context range IDs
+            context_ids = list(range(
+                max(0, center_id - context_size),
+                min(center_id + context_size + 1, self.get_collection_size(collection_name))
+            ))
+            
+            # Query context sentences
+            context_results = self.client.query(
+                collection_name=collection_name,
+                expr=f"id in {context_ids}",
+                output_fields=["sentence", "page", "id"]
+            )
+            
+            # Sort by ID to ensure correct order
+            if context_results:
+                context_results.sort(key=lambda x: x["id"])
+            
+            return context_results
+
+        except Exception as e:
+            logger.error(f"Error in context query: {str(e)}")
+            return []
+
+    def get_collection_size(self, collection_name):
+        """Get the number of documents in collection"""
+        try:
+            return self.client.get_collection_stats(collection_name)["row_count"]
+        except:
+            return 0
 
 
 if __name__ == "__main__":
