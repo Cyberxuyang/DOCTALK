@@ -9,11 +9,14 @@ export function ChatBox() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [hoveredMessage, setHoveredMessage] = useState(null);
+  const [isInputLocked, setIsInputLocked] = useState(false);
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    setIsInputLocked(true);
     setMessages((prev) => [...prev, { role: "user", content: input }]);
+    setInput("");
 
     try {
       const response = await chatService.sendMessage(input);
@@ -32,29 +35,33 @@ export function ChatBox() {
       ]);
     }
 
-    setInput("");
+    setIsInputLocked(false);
   };
 
   const handleVectorSearch = async () => {
     if (!input.trim()) return;
+
+    setIsInputLocked(true);
     setMessages((prev) => [...prev, { role: "user", content: input }]);
+    setInput("");
+
     try {
       const response = await chatService.searchVectorDB(input);
-      console.log("response:::", response)
+      console.log("response:::", response);
 
       const formattedResponse = {
         role: "assistant",
-        content: response.answer,  // Display only the answer
-        metadata: response.page ? { 
-          page: response.page, 
-          text: response.vectorDB_answer // Relevant text from the PDF
-        } : null,
-        isVectorResult: !!response.page,  // Mark this as a vector search result
+        content: response.answer,
+        metadata: response.page
+          ? {
+              page: response.page,
+              text: response.vectorDB_answer,
+            }
+          : null,
+        isVectorResult: !!response.page,
       };
 
-      // Update the message list with the assistant's reply after receiving the response
       setMessages((prev) => [...prev, formattedResponse]);
-
     } catch (error) {
       console.error("Failed to get response:", error);
       setMessages((prev) => [
@@ -65,7 +72,8 @@ export function ChatBox() {
         },
       ]);
     }
-    setInput("");
+
+    setIsInputLocked(false);
   };
 
   return (
@@ -89,8 +97,12 @@ export function ChatBox() {
               onClick={() => {
                 if (message.isVectorResult && message.metadata?.page) {
                   window.dispatchEvent(
-                    new CustomEvent("jumpToPage", { detail: { page: message.metadata.page, 
-                      text: message.metadata.text } })
+                    new CustomEvent("jumpToPage", {
+                      detail: {
+                        page: message.metadata.page,
+                        text: message.metadata.text,
+                      },
+                    })
                   );
                 }
               }}
@@ -113,10 +125,11 @@ export function ChatBox() {
             placeholder="input..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && !isInputLocked && handleSend()}
+            disabled={isInputLocked}
           />
-          <Button onClick={handleSend}>Ask AI</Button>
-          <Button onClick={handleVectorSearch}>From DB</Button>
+          <Button onClick={handleSend} disabled={isInputLocked}>Ask AI</Button>
+          <Button onClick={handleVectorSearch} disabled={isInputLocked}>From DB</Button>
         </div>
       </CardFooter>
     </Card>
