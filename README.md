@@ -1,45 +1,57 @@
 # DOCTALK
-DOCTALK: Discuss Research Papers Locally with LLM and RAG
+Discuss Research Papers Locally with LLM and RAG
 
-# Project Description
+## Overview
+DOCTALK is a full-stack application that enables users to upload and interact with
+research papers in PDF format through a locally deployed Large Language Model (LLM).
+The system uses a Retrieval-Augmented Generation (RAG) pipeline to provide
+context-aware responses grounded in document content, without relying on external
+LLM APIs.
 
-## File Contents
+## Key Features
+- PDF document upload and text extraction
+- Document ingestion and chunking for long documents
+- Vector-based retrieval using embeddings
+- LLM-powered question answering grounded in retrieved document content
+- Fully local inference for privacy-sensitive use cases
+- Web-based interface built with React
 
-- **backend/app.py**: The main application file for the backend, built with the Flask framework. It handles HTTP requests and interacts with the LLM model and vector database.
-- **backend/model_utils.py**: A utility class for managing and loading the sentence vector model.
-- **backend/pdf_processor.py**: A module responsible for parsing PDF files and extracting text.
-- **backend/text_splitter.py**: A utility class for splitting text into smaller chunks.
-- **backend/vectorDB.py**: A module for interacting with the vector database.
-- **frontend**: The frontend code directory, built with React and Vite, containing UI components and configuration files.
+## System Architecture
+The system follows a standard RAG pipeline:
+1. PDF parsing and text extraction
+2. Text chunking and embedding generation
+3. Vector database indexing and retrieval
+4. Context-aware response generation using a local LLM
 
-## Compilation and Running Steps
+## Tech Stack
+- Backend: Python, Flask
+- Frontend: React, Vite
+- LLM: Local LLM (configured in `model_utils.py`)
+- Embeddings & Vector Search: Sentence embedding model + vector database
+- Containerization: Docker
 
-### Pre-requisites
+## Project Structure
+backend/
+├── app.py # Flask API and request handling
+├── model_utils.py # LLM and embedding model management
+├── pdf_processor.py # PDF parsing and text extraction
+├── text_splitter.py # Text chunking utilities
+├── vectorDB.py # Vector database interface
+frontend/ # React + Vite frontend
 
-1. **Download Models**: 
-   - Ensure you download the LLM model and place it in the path specified in `backend/model_utils.py`. You can check the specific path in the `MODEL_PATH` variable.
-   - The vector database and vector model do not require additional downloads; they are handled automatically by the code.
+
+## Setup & Run
+
+### Prerequisites
+- Python 3.9+
+- Node.js 18+
 
 ### Backend
+```bash
+cd backend
+pip install -r requirements.txt
+python app.py
 
-1. Navigate to the `backend` directory.
-2. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Start the Flask application:
-   ```bash
-   python app.py
-   ```
-
-### Frontend
-
-1. Navigate to the `frontend` directory.
-2. Install Node.js dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
+## Note
+The LLM model path can be configured via MODEL_PATH in backend/model_utils.py
+The vector database and embedding model are initialized automatically at runtime
