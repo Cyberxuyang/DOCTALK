@@ -51,6 +51,14 @@ frontend/ # React + Vite frontend
 cd backend
 pip install -r requirements.txt
 python app.py
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ## Note
 The LLM model path can be configured via MODEL_PATH in backend/model_utils.py
